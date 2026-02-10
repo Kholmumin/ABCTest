@@ -15,9 +15,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let newWindow = UIWindow(windowScene: windowScene)
-
-        let mainCollection = MainCollectionView()
-        newWindow.rootViewController = UINavigationController(rootViewController: mainCollection)
+        
+        let navigationController = UINavigationController()
+        let appDIContainer = AppDIContainter()
+        let appFlowCoordinator = AppFlowCoordinator(diContainer: appDIContainer, navigationController: navigationController)
+        appFlowCoordinator.start()
+        newWindow.rootViewController = navigationController
         newWindow.makeKeyAndVisible()
         self.window = newWindow
     }

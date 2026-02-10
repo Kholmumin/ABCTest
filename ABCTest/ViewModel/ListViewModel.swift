@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 struct ListViewModelActions {
-    //USED FOR ROUTING
+    let showStatistics: (_ itemCount: Int, _ topCharacters: [(Character, Int)]) -> Void
 }
 
 protocol ListViewModelOutput {
@@ -21,16 +21,20 @@ protocol ListViewModelOutput {
 
 protocol ListViewModelInput {
     func topCharacters(limit: Int, from items: [Item]) -> [(Character, Int)]
+    func didTapFloatingButton()
 }
 
 typealias ListViewModelType = ListViewModelInput & ListViewModelOutput
 
 final class ListViewModel: ObservableObject, ListViewModelType {
     
+    private let actions: ListViewModelActions
+    
     // MARK: - INIT
     
-    init(items: [Item] = StaticModels.shared.sampleItems) {
+    init(items: [Item] = StaticModels.shared.sampleItems, actions: ListViewModelActions) {
         self.allItems = items
+        self.actions = actions
     }
 
     // MARK: - PROPERTIES
@@ -70,5 +74,9 @@ final class ListViewModel: ObservableObject, ListViewModelType {
             .sorted { $0.value > $1.value }
             .prefix(limit)
             .map { ($0.key, $0.value) }
+    }
+    
+    func didTapFloatingButton() {
+        actions.showStatistics(filteredItems.count, topCharactersFromFiltered)
     }
 }

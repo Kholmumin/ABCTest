@@ -8,7 +8,10 @@
 import SwiftUI
 
 struct CarouselView: View {
-    @StateObject private var viewModel = ListViewModel()
+    
+    @StateObject private var viewModel = ListViewModel(actions: ListViewModelActions { itemCount, topCharacters in
+        
+    })
     @State private var showStatistics = false
     
     var body: some View {
