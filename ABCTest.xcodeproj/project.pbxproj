@@ -10,22 +10,9 @@
 		F1D27D0E2F3AE92D00B6BEED /* ABCTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ABCTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F1D27D202F3AE92E00B6BEED /* Exceptions for "ABCTest" folder in "ABCTest" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = F1D27D0D2F3AE92D00B6BEED /* ABCTest */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F1D27D102F3AE92D00B6BEED /* ABCTest */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				F1D27D202F3AE92E00B6BEED /* Exceptions for "ABCTest" folder in "ABCTest" target */,
-			);
 			path = ABCTest;
 			sourceTree = "<group>";
 		};
