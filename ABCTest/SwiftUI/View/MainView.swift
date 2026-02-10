@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct CarouselView: View {
-    
-    @StateObject private var viewModel = ListViewModel(actions: ListViewModelActions { itemCount, topCharacters in
-        
-    })
-    @State private var showStatistics = false
-    
+
+    @ObservedObject private var viewModel: ListViewModel
+
+    init(viewModel: ListViewModel) {
+        self.viewModel = viewModel
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
@@ -47,21 +48,14 @@ struct CarouselView: View {
                         }
                     }
                 }
-                StatisticsFloatingButton(action: { showStatistics = true })
+                StatisticsFloatingButton(action: { viewModel.didTapFloatingButton() })
             }
             .navigationTitle("Carousel")
-            .sheet(isPresented: $showStatistics) {
-                StatisticsSheet(
-                    itemCount: viewModel.filteredItems.count,
-                    topCharacters: viewModel.topCharactersFromFiltered
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-            }
         }
     }
 }
 
 #Preview {
-    CarouselView()
+    let viewModel = ListViewModel(actions: ListViewModelActions { _, _ in })
+    CarouselView(viewModel: viewModel)
 }
