@@ -5,6 +5,7 @@
 //  Created by Kholmumin on 10/02/26.
 //
 
+import Combine
 import UIKit
 
 final class MainCollectionView: UIViewController {
@@ -21,10 +22,13 @@ final class MainCollectionView: UIViewController {
         case list(Item)
     }
 
+    private static let listHeaderElementKind = "list-search-header"
+
     // MARK: - Properties
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, CollectionItem>!
     private let viewModel = ListViewModel()
+    private var cancellables = Set<AnyCancellable>()
 
     private lazy var collection: UICollectionView = {
         let collection = UICollectionView(frame: .zero, collectionViewLayout: createCompositionalLayout())
@@ -39,6 +43,7 @@ final class MainCollectionView: UIViewController {
         super.viewDidLoad()
         setupUI()
         configureDataSource()
+        bindSearchToFilter()
         applySnapshot()
     }
 
@@ -111,8 +116,19 @@ final class MainCollectionView: UIViewController {
         )
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
 
-        // Section
+        // Section with pinned search header
         let section = NSCollectionLayoutSection(group: group)
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(80)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: Self.listHeaderElementKind,
+            alignment: .top
+        )
+        header.pinToVisibleBounds = true
+        section.boundarySupplementaryItems = [header]
 
         return section
     }
@@ -127,6 +143,16 @@ final class MainCollectionView: UIViewController {
 
         let listCellRegistration = UICollectionView.CellRegistration<ListCollectionCell, Item> { cell, indexPath, item in
             cell.configure(with: item)
+        }
+
+        let searchHeaderRegistration = UICollectionView.SupplementaryRegistration<SearchHeaderReusableView>(
+            elementKind: Self.listHeaderElementKind
+        ) { [weak self] headerView, _, _ in
+            guard let self else { return }
+            headerView.searchHeaderView.setSearchText(self.viewModel.searchText)
+            headerView.searchHeaderView.onSearchTextChange = { [weak self] text in
+                self?.viewModel.searchText = text
+            }
         }
 
         // Configure data source (type-safe: no AnyHashable casting)
@@ -146,6 +172,26 @@ final class MainCollectionView: UIViewController {
                 )
             }
         }
+
+        dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+            guard let _ =  self, kind == Self.listHeaderElementKind,
+                  Section(rawValue: indexPath.section) == .list else {
+                return nil
+            }
+            return collectionView.dequeueConfiguredReusableSupplementary(
+                using: searchHeaderRegistration,
+                for: indexPath
+            )
+        }
+    }
+
+    private func bindSearchToFilter() {
+        viewModel.$searchText
+            .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.applySnapshot()
+            }
+            .store(in: &cancellables)
     }
 
     private func applySnapshot() {
