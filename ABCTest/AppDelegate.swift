@@ -6,8 +6,8 @@
 //
 
 import UIKit
-import SwiftUI
 
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
@@ -32,13 +32,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 
-}
-
-@main
-struct ABCTest: App {
-    var body: some Scene {
-        WindowGroup {
-            CarouselView()
-        }
-    }
 }

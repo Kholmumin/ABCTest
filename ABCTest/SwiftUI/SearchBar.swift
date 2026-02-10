@@ -5,7 +5,6 @@
 //  Created by Kholmumin on 10/02/26.
 //
 
-
 import SwiftUI
 
 struct SearchBar: View {
