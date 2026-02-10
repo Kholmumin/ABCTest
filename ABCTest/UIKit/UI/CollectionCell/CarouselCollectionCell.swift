@@ -12,8 +12,13 @@ final class CarouselCollectionCell: UICollectionViewCell {
     // MARK: - Properties
 
     private var imageURLs: [URL] = []
+    private var pageContainers: [UIView] = []
     private var imageViews: [UIImageView] = []
-    private var loadingTasks: [URLSessionDataTask] = []
+    private var activityIndicators: [UIActivityIndicatorView] = []
+    private var imageLoadTasks: [ImageLoadTask] = []
+    private var containerLeadingConstraints: [NSLayoutConstraint] = []
+    private let imageLoader = ImageLoader.shared
+    private var isLayoutReady = false
 
     // MARK: - UI Components
 
@@ -23,6 +28,10 @@ final class CarouselCollectionCell: UICollectionViewCell {
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.bounces = true
+        scrollView.alwaysBounceHorizontal = true
+        scrollView.delaysContentTouches = false
+        scrollView.canCancelContentTouches = true
         return scrollView
     }()
 
@@ -71,85 +80,130 @@ final class CarouselCollectionCell: UICollectionViewCell {
     // MARK: - Configuration
 
     func configure(with imageURLs: [URL]) {
-        // Cancel any ongoing image loading tasks
-        loadingTasks.forEach { $0.cancel() }
-        loadingTasks.removeAll()
+        imageLoadTasks.forEach { $0.cancel() }
+        imageLoadTasks.removeAll()
 
-        // Clear existing image views
-        imageViews.forEach { $0.removeFromSuperview() }
-        imageViews.removeAll()
+        clearPageViews()
 
         self.imageURLs = imageURLs
 
-        // Configure page control
         pageControl.numberOfPages = imageURLs.count
         pageControl.currentPage = 0
 
-        // Create image views for each URL
-        for (index, url) in imageURLs.enumerated() {
+        createPageViews(count: imageURLs.count)
+
+        setNeedsLayout()
+        layoutIfNeeded()
+
+        loadImages()
+    }
+
+    private func clearPageViews() {
+        pageContainers.forEach { $0.removeFromSuperview() }
+        pageContainers.removeAll()
+        imageViews.removeAll()
+        activityIndicators.removeAll()
+        containerLeadingConstraints.removeAll()
+    }
+
+    private func createPageViews(count: Int) {
+        for _ in 0..<count {
+            let container = UIView()
+            container.backgroundColor = .systemGray5
+            container.translatesAutoresizingMaskIntoConstraints = false
+            scrollView.addSubview(container)
+            pageContainers.append(container)
+
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
-            imageView.backgroundColor = .systemGray6
             imageView.translatesAutoresizingMaskIntoConstraints = false
-
-            scrollView.addSubview(imageView)
+            container.addSubview(imageView)
             imageViews.append(imageView)
 
-            // Layout image view
-            NSLayoutConstraint.activate([
-                imageView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-                imageView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-                imageView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-                imageView.heightAnchor.constraint(equalTo: scrollView.heightAnchor),
-                imageView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: CGFloat(index) * contentView.bounds.width)
-            ])
+            let indicator = UIActivityIndicatorView(style: .medium)
+            indicator.color = .gray
+            indicator.hidesWhenStopped = true
+            indicator.translatesAutoresizingMaskIntoConstraints = false
+            indicator.startAnimating()
+            container.addSubview(indicator)
+            activityIndicators.append(indicator)
 
-            // Load image
-            loadImage(from: url, into: imageView)
+            let leadingConstraint = container.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 0)
+            containerLeadingConstraints.append(leadingConstraint)
+
+            NSLayoutConstraint.activate([
+                container.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+                container.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+                container.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+                container.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
+                leadingConstraint,
+
+                imageView.topAnchor.constraint(equalTo: container.topAnchor),
+                imageView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                imageView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                imageView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+                indicator.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                indicator.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+            ])
+        }
+    }
+
+    private func loadImages() {
+        for (index, url) in imageURLs.enumerated() {
+            guard index < imageViews.count, index < activityIndicators.count else { continue }
+
+            let imageView = imageViews[index]
+            let indicator = activityIndicators[index]
+
+            let task = imageLoader.loadImage(from: url) { [weak imageView, weak indicator] image in
+                indicator?.stopAnimating()
+                imageView?.image = image
+            }
+            imageLoadTasks.append(task)
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateScrollViewLayout()
+    }
+
+    private func updateScrollViewLayout() {
+        let pageWidth = scrollView.bounds.width
+        guard pageWidth > 0 else { return }
+
+        for (index, constraint) in containerLeadingConstraints.enumerated() {
+            constraint.constant = CGFloat(index) * pageWidth
         }
 
-        // Set scroll view content size
-        scrollView.contentSize = CGSize(
-            width: contentView.bounds.width * CGFloat(imageURLs.count),
-            height: contentView.bounds.height
+        let newContentSize = CGSize(
+            width: pageWidth * CGFloat(max(1, imageURLs.count)),
+            height: scrollView.bounds.height
         )
+
+        if scrollView.contentSize != newContentSize {
+            scrollView.contentSize = newContentSize
+        }
+
+        isLayoutReady = true
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
 
-        // Cancel any ongoing image loading tasks
-        loadingTasks.forEach { $0.cancel() }
-        loadingTasks.removeAll()
+        imageLoadTasks.forEach { $0.cancel() }
+        imageLoadTasks.removeAll()
 
-        // Clear existing image views
-        imageViews.forEach { $0.removeFromSuperview() }
-        imageViews.removeAll()
+        clearPageViews()
 
         imageURLs.removeAll()
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
         scrollView.contentOffset = .zero
-    }
-
-    // MARK: - Helper Methods
-
-    private func loadImage(from url: URL, into imageView: UIImageView) {
-        let task = URLSession.shared.dataTask(with: url) { [weak imageView] data, response, error in
-            guard let imageView = imageView,
-                  let data = data,
-                  let image = UIImage(data: data),
-                  error == nil else {
-                return
-            }
-
-            DispatchQueue.main.async {
-                imageView.image = image
-            }
-        }
-        task.resume()
-        loadingTasks.append(task)
+        scrollView.contentSize = .zero
+        isLayoutReady = false
     }
 }
 

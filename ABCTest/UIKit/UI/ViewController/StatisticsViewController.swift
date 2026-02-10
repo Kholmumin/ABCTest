@@ -52,7 +52,6 @@ final class StatisticsViewController: UIViewController {
         stack.spacing = 16
         stack.alignment = .fill
 
-        // Row: List 1 — item count
         let countRow = statRow(
             icon: "list.bullet",
             title: "List 1",
@@ -64,7 +63,6 @@ final class StatisticsViewController: UIViewController {
         countRow.isLayoutMarginsRelativeArrangement = true
         stack.addArrangedSubview(countRow)
 
-        // Top 3 characters
         let charsTitle = UILabel()
         charsTitle.text = "Top 3 Characters"
         charsTitle.font = .systemFont(ofSize: 17, weight: .semibold)

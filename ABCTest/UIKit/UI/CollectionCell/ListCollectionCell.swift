@@ -9,6 +9,11 @@ import UIKit
 
 final class ListCollectionCell: UICollectionViewCell {
 
+    // MARK: - Properties
+
+    private var imageLoadTask: ImageLoadTask?
+    private let imageLoader = ImageLoader.shared
+
     // MARK: - UI Components
 
     private let containerView: UIView = {
@@ -115,35 +120,23 @@ final class ListCollectionCell: UICollectionViewCell {
 
         if let imageURL = item.image {
             activityIndicator.startAnimating()
-            loadImage(from: imageURL)
+
+            imageLoadTask = imageLoader.loadImage(from: imageURL) { [weak self] image in
+                self?.itemImageView.image = image
+                self?.activityIndicator.stopAnimating()
+            }
         }
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        imageLoadTask?.cancel()
+        imageLoadTask = nil
+
         itemImageView.image = nil
         titleLabel.text = nil
         descriptionLabel.text = nil
         activityIndicator.stopAnimating()
-    }
-    
-    // HELPER
-    private func loadImage(from url: URL) {
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self,
-                  let data = data,
-                  let image = UIImage(data: data),
-                  error == nil else {
-                DispatchQueue.main.async {
-                    self?.activityIndicator.stopAnimating()
-                }
-                return
-            }
-
-            DispatchQueue.main.async {
-                self.itemImageView.image = image
-                self.activityIndicator.stopAnimating()
-            }
-        }.resume()
     }
 }

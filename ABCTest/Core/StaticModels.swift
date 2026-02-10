@@ -19,11 +19,6 @@ final class StaticModels {
             description: "A peaaaaaceful view of the sun rising over the mountains."
         ),
         Item(
-            image: URL(string: "https://images.unsplash.com/photo-1517816428104-7a3b3887a77e?w=800"),
-            title: "Ocean Beaaaaach",
-            description: "Calm waves gently touching the sandy shore."
-        ),
-        Item(
             image: URL(string: "https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?w=800"),
             title: "Forest Trail",
             description: "A quiet paaaaath through green and dense forest."
@@ -37,11 +32,6 @@ final class StaticModels {
             image: URL(string: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800"),
             title: "Desert Road",
             description: "An endless road through golden sand."
-        ),
-        Item(
-            image: URL(string: "https://images.unsplash.com/photo-1500534314209-a26db0f5a3a5?w=800"),
-            title: "Snowy Peaks",
-            description: "White mountains covered with fresh snow."
         ),
         Item(
             image: URL(string: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"),
