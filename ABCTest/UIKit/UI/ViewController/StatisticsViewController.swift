@@ -42,7 +42,7 @@ final class StatisticsViewController: UIViewController {
     private func buildUI() {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "Statistics"
+        titleLabel.text = TextConstants.Statistics.title
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
         view.addSubview(titleLabel)
 
@@ -53,9 +53,9 @@ final class StatisticsViewController: UIViewController {
         stack.alignment = .fill
 
         let countRow = statRow(
-            icon: "list.bullet",
-            title: "List 1",
-            value: "\(itemCount) items"
+            icon: ImageConstants.SFSymbol.listBullet,
+            title: TextConstants.Statistics.listTitle,
+            value: String(format: TextConstants.Statistics.itemsFormat, itemCount)
         )
         countRow.backgroundColor = UIColor.systemGray6
         countRow.layer.cornerRadius = 12
@@ -64,19 +64,19 @@ final class StatisticsViewController: UIViewController {
         stack.addArrangedSubview(countRow)
 
         let charsTitle = UILabel()
-        charsTitle.text = "Top 3 Characters"
+        charsTitle.text = TextConstants.Statistics.topCharactersTitle
         charsTitle.font = .systemFont(ofSize: 17, weight: .semibold)
         stack.addArrangedSubview(charsTitle)
 
         let maxCount = topCharacters.first?.1 ?? 1
-        let colors: [UIColor] = [.systemBlue, .systemGreen, .systemOrange]
+        let colors: [UIColor] = [UIColor.Chart.first, UIColor.Chart.second, UIColor.Chart.third]
         for (index, entry) in topCharacters.enumerated() {
             let row = characterRow(
                 rank: index + 1,
                 character: entry.0,
                 count: entry.1,
                 maxCount: maxCount,
-                color: index < colors.count ? colors[index] : .systemGray
+                color: index < colors.count ? colors[index] : UIColor.Chart.fallback
             )
             stack.addArrangedSubview(row)
         }
@@ -100,7 +100,7 @@ final class StatisticsViewController: UIViewController {
 
     private func statRow(icon: String, title: String, value: String) -> UIStackView {
         let iconView = UIImageView(image: UIImage(systemName: icon))
-        iconView.tintColor = .systemBlue
+        iconView.tintColor = UIColor.Chart.first
         iconView.contentMode = .scaleAspectFit
         let titleLabel = UILabel()
         titleLabel.text = title
@@ -137,7 +137,7 @@ private func characterRow(rank: Int, character: Character, count: Int, maxCount:
         progress.heightAnchor.constraint(equalToConstant: 8).isActive = true
         progress.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let countLabel = UILabel()
-        countLabel.text = "= \(count)"
+        countLabel.text = String(format: TextConstants.Statistics.countFormat, count)
         countLabel.font = .systemFont(ofSize: 15, weight: .medium)
         countLabel.setContentHuggingPriority(.required, for: .horizontal)
         let row = UIStackView(arrangedSubviews: [rankLabel, charLabel, progress, countLabel])

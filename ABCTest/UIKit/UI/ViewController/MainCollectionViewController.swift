@@ -12,27 +12,27 @@ final class MainCollectionViewController: UIViewController {
     
     // MARK: - UI Properties
     
-    private lazy var collection: UICollectionView = {
-        let collection = UICollectionView(frame: .zero, collectionViewLayout: createCompositionalLayout())
-        collection.translatesAutoresizingMaskIntoConstraints = false
-        collection.backgroundColor = .systemBackground
-        return collection
+    private lazy var collectionView: UICollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createCompositionalLayout())
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .systemBackground
+        return collectionView
     }()
     
     private lazy var floatingButton: UIButton = {
         let button = UIButton(type: .system)
-        let image = UIImage(systemName: "chart.bar.fill")
+        let image = UIImage(systemName: ImageConstants.SFSymbol.chartBarFill)
         button.setImage(image, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = .systemBlue
+        button.tintColor = UIColor.FloatingButton.tint
+        button.backgroundColor = UIColor.FloatingButton.background
         button.translatesAutoresizingMaskIntoConstraints = false
       
-        button.layer.cornerRadius = 28
+        button.layer.cornerRadius = LayoutConstants.CornerRadius.medium
         button.clipsToBounds = true
         button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowRadius = 4
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowOpacity = LayoutConstants.Shadow.opacity
+        button.layer.shadowRadius = LayoutConstants.Shadow.radius
+        button.layer.shadowOffset = LayoutConstants.Shadow.offset
         button.layer.masksToBounds = false
         button.addTarget(self, action: #selector(floatingButtonTapped), for: .touchUpInside)
         return button
@@ -56,10 +56,12 @@ final class MainCollectionViewController: UIViewController {
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, CollectionItem>!
     private let viewModel: ListViewModel
+    private let imageLoader: ImageLoadingService
     private var cancellables = Set<AnyCancellable>()
     
-    init( viewModel: ListViewModel) {
+    init(viewModel: ListViewModel, imageLoader: ImageLoadingService) {
         self.viewModel = viewModel
+        self.imageLoader = imageLoader
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -74,46 +76,62 @@ final class MainCollectionViewController: UIViewController {
         setupUI()
         configureDataSource()
         bindSearchToFilter()
-        applySnapshot()
+        
+        Task {
+            await viewModel.loadItems()
+            applySnapshot()
+        }
     }
 
     // MARK: - Setup
 
     private func setupUI() {
         view.backgroundColor = .white
-        title = "Carousel"
+        title = TextConstants.NavigationTitle.carousel
+        navigationController?.navigationBar.prefersLargeTitles = true
 
-        view.addSubview(collection)
+        view.addSubview(collectionView)
         view.addSubview(floatingButton)
 
         NSLayoutConstraint.activate([
-            collection.topAnchor.constraint(equalTo: view.topAnchor),
-            collection.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collection.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collection.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
         NSLayoutConstraint.activate([
-            floatingButton.widthAnchor.constraint(equalToConstant: 56),
-            floatingButton.heightAnchor.constraint(equalToConstant: 56),
-            floatingButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            floatingButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+            floatingButton.widthAnchor.constraint(equalToConstant: LayoutConstants.Size.floatingButtonSize),
+            floatingButton.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.floatingButtonSize),
+            floatingButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -LayoutConstants.Spacing.large),
+            floatingButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -LayoutConstants.Spacing.large)
         ])
+        
+        // Add tap gesture to dismiss keyboard when tapping on collection view
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        collectionView.addGestureRecognizer(tapGesture)
     }
     
     @objc private func floatingButtonTapped() {
         viewModel.didTapFloatingButton()
     }
     
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
     // MARK: - Data Source
 
     private func configureDataSource() {
-        let carouselCellRegistration = UICollectionView.CellRegistration<CarouselCollectionCell, [URL]> { cell, indexPath, imageURLs in
-            cell.configure(with: imageURLs)
+        let carouselCellRegistration = UICollectionView.CellRegistration<CarouselCollectionCell, [URL]> { [weak self] cell, indexPath, imageURLs in
+            guard let self = self else { return }
+            cell.configure(with: imageURLs, imageLoader: self.imageLoader)
         }
 
-        let listCellRegistration = UICollectionView.CellRegistration<ListCollectionCell, Item> { cell, indexPath, item in
-            cell.configure(with: item)
+        let listCellRegistration = UICollectionView.CellRegistration<ListCollectionCell, Item> { [weak self] cell, indexPath, item in
+            guard let self = self else { return }
+            cell.configure(with: item, imageLoader: self.imageLoader)
         }
 
         let searchHeaderRegistration = UICollectionView.SupplementaryRegistration<SearchHeaderReusableView>(
@@ -126,7 +144,7 @@ final class MainCollectionViewController: UIViewController {
             }
         }
 
-        dataSource = UICollectionViewDiffableDataSource<Section, CollectionItem>(collectionView: collection) { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<Section, CollectionItem>(collectionView: collectionView) { collectionView, indexPath, item in
             switch item {
             case .carousel(let imageURLs):
                 return collectionView.dequeueConfiguredReusableCell(
@@ -144,8 +162,12 @@ final class MainCollectionViewController: UIViewController {
         }
 
         dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
-            guard let _ =  self, kind == Self.listHeaderElementKind,
+            guard let self = self, kind == Self.listHeaderElementKind,
                   Section(rawValue: indexPath.section) == .list else {
+                return nil
+            }
+            // Only show search header when data is loaded
+            if self.viewModel.isLoading {
                 return nil
             }
             return collectionView.dequeueConfiguredReusableSupplementary(
@@ -159,9 +181,29 @@ final class MainCollectionViewController: UIViewController {
         viewModel.$searchText
             .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
             .sink { [weak self] _ in
+                self?.updateListSection()
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$isLoading
+            .sink { [weak self] _ in
                 self?.applySnapshot()
             }
             .store(in: &cancellables)
+    }
+    
+    private func updateListSection() {
+        var snapshot = dataSource.snapshot()
+        
+        // Only update the list section items without recreating the entire snapshot
+        if snapshot.sectionIdentifiers.contains(.list) {
+            let currentListItems = snapshot.itemIdentifiers(inSection: .list)
+            snapshot.deleteItems(currentListItems)
+            snapshot.appendItems(viewModel.filteredItems.map { .list($0) }, toSection: .list)
+            
+            // Apply without animation to prevent header recreation and keyboard dismissal
+            dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
+        }
     }
 
     private func applySnapshot() {
@@ -173,7 +215,7 @@ final class MainCollectionViewController: UIViewController {
         snapshot.appendSections([.list])
         snapshot.appendItems(viewModel.filteredItems.map { .list($0) }, toSection: .list)
 
-        dataSource.apply(snapshot, animatingDifferences: false)
+        dataSource.apply(snapshot, animatingDifferences: true, completion: nil)
     }
 }
 
@@ -206,13 +248,13 @@ extension MainCollectionViewController {
         // Group
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(240)
+            heightDimension: .absolute(LayoutConstants.Size.carouselHeight)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
         // Section
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: LayoutConstants.Spacing.standard, trailing: 0)
 
         return section
     }
@@ -221,14 +263,14 @@ extension MainCollectionViewController {
         // Item
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(152)
+            heightDimension: .estimated(LayoutConstants.Size.listItemEstimatedHeight)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
         // Group
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(152)
+            heightDimension: .estimated(LayoutConstants.Size.listItemEstimatedHeight)
         )
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
 
@@ -236,7 +278,7 @@ extension MainCollectionViewController {
         let section = NSCollectionLayoutSection(group: group)
         let headerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(80)
+            heightDimension: .estimated(LayoutConstants.Size.searchBarHeight + LayoutConstants.Spacing.standard * 2)
         )
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: headerSize,

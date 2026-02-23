@@ -11,15 +11,15 @@ final class ListCollectionCell: UICollectionViewCell {
 
     // MARK: - Properties
 
-    private var imageLoadTask: ImageLoadTask?
-    private let imageLoader = ImageLoader.shared
+    private var imageLoadTask: Task<Void, Never>?
+    private var imageLoader: ImageLoadingService?
 
     // MARK: - UI Components
 
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.gray.withAlphaComponent(0.3)
-        view.layer.cornerRadius = 20
+        view.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+        view.layer.cornerRadius = LayoutConstants.CornerRadius.small
         view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -28,7 +28,7 @@ final class ListCollectionCell: UICollectionViewCell {
     private let itemImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 20
+        imageView.layer.cornerRadius = LayoutConstants.CornerRadius.small
         imageView.clipsToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -63,7 +63,7 @@ final class ListCollectionCell: UICollectionViewCell {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.alignment = .leading
-        stackView.spacing = 4
+        stackView.spacing = LayoutConstants.Spacing.small
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
@@ -91,28 +91,29 @@ final class ListCollectionCell: UICollectionViewCell {
         textStackView.addArrangedSubview(descriptionLabel)
 
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            containerView.heightAnchor.constraint(equalToConstant: 120),
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: LayoutConstants.Spacing.standard),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: LayoutConstants.Spacing.standard),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -LayoutConstants.Spacing.standard),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -LayoutConstants.Spacing.standard),
+            containerView.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.containerHeight),
 
-            itemImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            itemImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LayoutConstants.Spacing.standard),
             itemImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            itemImageView.widthAnchor.constraint(equalToConstant: 100),
-            itemImageView.heightAnchor.constraint(equalToConstant: 100),
+            itemImageView.widthAnchor.constraint(equalToConstant: LayoutConstants.Size.imageSize),
+            itemImageView.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.imageSize),
 
             activityIndicator.centerXAnchor.constraint(equalTo: itemImageView.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: itemImageView.centerYAnchor),
 
-            textStackView.leadingAnchor.constraint(equalTo: itemImageView.trailingAnchor, constant: 5),
-            textStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            textStackView.leadingAnchor.constraint(equalTo: itemImageView.trailingAnchor, constant: LayoutConstants.Spacing.medium),
+            textStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LayoutConstants.Spacing.standard),
             textStackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
     }
 
 
-    func configure(with item: Item) {
+    func configure(with item: Item, imageLoader: ImageLoadingService) {
+        self.imageLoader = imageLoader
         titleLabel.text = item.title
         descriptionLabel.text = item.description
 
@@ -121,9 +122,20 @@ final class ListCollectionCell: UICollectionViewCell {
         if let imageURL = item.image {
             activityIndicator.startAnimating()
 
-            imageLoadTask = imageLoader.loadImage(from: imageURL) { [weak self] image in
-                self?.itemImageView.image = image
-                self?.activityIndicator.stopAnimating()
+            imageLoadTask = Task { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let image = try await imageLoader.loadImage(from: imageURL)
+                    await MainActor.run {
+                        self.itemImageView.image = image
+                        self.activityIndicator.stopAnimating()
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.activityIndicator.stopAnimating()
+                    }
+                }
             }
         }
     }
@@ -133,6 +145,7 @@ final class ListCollectionCell: UICollectionViewCell {
 
         imageLoadTask?.cancel()
         imageLoadTask = nil
+        imageLoader = nil
 
         itemImageView.image = nil
         titleLabel.text = nil

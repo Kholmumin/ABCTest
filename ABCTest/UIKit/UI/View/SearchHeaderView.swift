@@ -16,40 +16,40 @@ final class SearchHeaderView: UIView {
     // MARK: - UI
 
     private let containerView: UIView = {
-        let v = UIView()
-        v.backgroundColor = UIColor.systemGray6
-        v.layer.cornerRadius = 30
-        v.clipsToBounds = true
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
+        let view = UIView()
+        view.backgroundColor = UIColor.systemGray6
+        view.layer.cornerRadius = LayoutConstants.CornerRadius.large
+        view.clipsToBounds = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
     private let magnifyingGlassImageView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        iv.tintColor = .secondaryLabel
-        iv.contentMode = .scaleAspectFit
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        return iv
+        let imageView = UIImageView(image: UIImage(systemName: ImageConstants.SFSymbol.magnifyingGlass))
+        imageView.tintColor = .secondaryLabel
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
 
     private let textField: UITextField = {
-        let tf = UITextField()
-        tf.placeholder = "Search"
-        tf.font = .systemFont(ofSize: 16)
-        tf.borderStyle = .none
-        tf.autocorrectionType = .no
-        tf.autocapitalizationType = .none
-        tf.translatesAutoresizingMaskIntoConstraints = false
-        return tf
+        let textField = UITextField()
+        textField.placeholder = TextConstants.Search.placeholder
+        textField.font = .systemFont(ofSize: 16)
+        textField.borderStyle = .none
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
     }()
 
     private let clearButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-        b.tintColor = .secondaryLabel
-        b.isHidden = true
-        b.translatesAutoresizingMaskIntoConstraints = false
-        return b
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: ImageConstants.SFSymbol.xmarkCircleFill), for: .normal)
+        button.tintColor = .secondaryLabel
+        button.isHidden = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
 
     // MARK: - Init
@@ -72,25 +72,25 @@ final class SearchHeaderView: UIView {
         containerView.addSubview(clearButton)
 
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
-            containerView.heightAnchor.constraint(equalToConstant: 60),
+            containerView.topAnchor.constraint(equalTo: topAnchor, constant: LayoutConstants.Spacing.standard),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: LayoutConstants.Spacing.standard),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -LayoutConstants.Spacing.standard),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -LayoutConstants.Spacing.standard),
+            containerView.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.searchBarHeight),
 
-            magnifyingGlassImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            magnifyingGlassImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: LayoutConstants.Spacing.standard),
             magnifyingGlassImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            magnifyingGlassImageView.widthAnchor.constraint(equalToConstant: 20),
-            magnifyingGlassImageView.heightAnchor.constraint(equalToConstant: 20),
+            magnifyingGlassImageView.widthAnchor.constraint(equalToConstant: LayoutConstants.Size.iconSmall),
+            magnifyingGlassImageView.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.iconSmall),
 
             textField.leadingAnchor.constraint(equalTo: magnifyingGlassImageView.trailingAnchor, constant: 12),
             textField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            textField.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -8),
+            textField.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -LayoutConstants.Spacing.medium),
 
-            clearButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            clearButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -LayoutConstants.Spacing.standard),
             clearButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            clearButton.widthAnchor.constraint(equalToConstant: 24),
-            clearButton.heightAnchor.constraint(equalToConstant: 24)
+            clearButton.widthAnchor.constraint(equalToConstant: LayoutConstants.Size.iconMedium),
+            clearButton.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.iconMedium)
         ])
 
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)

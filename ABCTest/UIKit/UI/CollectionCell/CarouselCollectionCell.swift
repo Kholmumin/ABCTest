@@ -15,9 +15,8 @@ final class CarouselCollectionCell: UICollectionViewCell {
     private var pageContainers: [UIView] = []
     private var imageViews: [UIImageView] = []
     private var activityIndicators: [UIActivityIndicatorView] = []
-    private var imageLoadTasks: [ImageLoadTask] = []
-    private var containerLeadingConstraints: [NSLayoutConstraint] = []
-    private let imageLoader = ImageLoader.shared
+    private var imageLoadTasks: [Task<Void, Never>] = []
+    private var imageLoader: ImageLoadingService?
     private var isLayoutReady = false
 
     // MARK: - UI Components
@@ -37,8 +36,8 @@ final class CarouselCollectionCell: UICollectionViewCell {
 
     private let pageControl: UIPageControl = {
         let pageControl = UIPageControl()
-        pageControl.currentPageIndicatorTintColor = .white
-        pageControl.pageIndicatorTintColor = .white.withAlphaComponent(0.5)
+        pageControl.currentPageIndicatorTintColor = UIColor.PageControl.current
+        pageControl.pageIndicatorTintColor = UIColor.PageControl.indicator
         pageControl.translatesAutoresizingMaskIntoConstraints = false
         pageControl.isUserInteractionEnabled = false
         return pageControl
@@ -71,15 +70,16 @@ final class CarouselCollectionCell: UICollectionViewCell {
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
-            pageControl.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            pageControl.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -LayoutConstants.Spacing.medium),
             pageControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            pageControl.heightAnchor.constraint(equalToConstant: 28)
+            pageControl.heightAnchor.constraint(equalToConstant: LayoutConstants.Size.iconLarge)
         ])
     }
 
     // MARK: - Configuration
 
-    func configure(with imageURLs: [URL]) {
+    func configure(with imageURLs: [URL], imageLoader: ImageLoadingService) {
+        self.imageLoader = imageLoader
         imageLoadTasks.forEach { $0.cancel() }
         imageLoadTasks.removeAll()
 
@@ -92,6 +92,14 @@ final class CarouselCollectionCell: UICollectionViewCell {
 
         createPageViews(count: imageURLs.count)
 
+        // Reset scroll view state completely
+        scrollView.contentOffset = .zero
+        scrollView.isScrollEnabled = true
+        scrollView.isPagingEnabled = true
+        scrollView.delaysContentTouches = false
+        scrollView.canCancelContentTouches = true
+        
+        // Force layout immediately to ensure scroll view is ready
         setNeedsLayout()
         layoutIfNeeded()
 
@@ -103,13 +111,12 @@ final class CarouselCollectionCell: UICollectionViewCell {
         pageContainers.removeAll()
         imageViews.removeAll()
         activityIndicators.removeAll()
-        containerLeadingConstraints.removeAll()
     }
 
     private func createPageViews(count: Int) {
-        for _ in 0..<count {
+        for index in 0..<count {
             let container = UIView()
-            container.backgroundColor = .systemGray5
+            container.backgroundColor = .systemGray6
             container.translatesAutoresizingMaskIntoConstraints = false
             scrollView.addSubview(container)
             pageContainers.append(container)
@@ -118,21 +125,31 @@ final class CarouselCollectionCell: UICollectionViewCell {
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
             imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.backgroundColor = .systemGray6
+            // Set placeholder image immediately
+            let placeholderConfig = UIImage.SymbolConfiguration(pointSize: 40, weight: .light)
+            imageView.image = UIImage(systemName: ImageConstants.SFSymbol.photoPlaceholder, withConfiguration: placeholderConfig)
+            imageView.tintColor = .systemGray3
             container.addSubview(imageView)
             imageViews.append(imageView)
 
             let indicator = UIActivityIndicatorView(style: .medium)
-            indicator.color = .gray
+            indicator.color = UIColor.ActivityIndicator.color
             indicator.hidesWhenStopped = true
             indicator.translatesAutoresizingMaskIntoConstraints = false
             indicator.startAnimating()
             container.addSubview(indicator)
             activityIndicators.append(indicator)
 
-            let leadingConstraint = container.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 0)
-            containerLeadingConstraints.append(leadingConstraint)
+            // Constrain to previous container or scroll view
+            let leadingConstraint: NSLayoutConstraint
+            if index == 0 {
+                leadingConstraint = container.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor)
+            } else {
+                leadingConstraint = container.leadingAnchor.constraint(equalTo: pageContainers[index - 1].trailingAnchor)
+            }
 
-            NSLayoutConstraint.activate([
+            var constraints = [
                 container.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
                 container.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
                 container.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
@@ -146,20 +163,46 @@ final class CarouselCollectionCell: UICollectionViewCell {
 
                 indicator.centerXAnchor.constraint(equalTo: container.centerXAnchor),
                 indicator.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-            ])
+            ]
+            
+            // Anchor the last container to the trailing edge to establish content size
+            if index == count - 1 {
+                constraints.append(container.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor))
+            }
+
+            NSLayoutConstraint.activate(constraints)
         }
     }
 
     private func loadImages() {
+        guard let imageLoader = imageLoader else { return }
+        
         for (index, url) in imageURLs.enumerated() {
             guard index < imageViews.count, index < activityIndicators.count else { continue }
 
             let imageView = imageViews[index]
             let indicator = activityIndicators[index]
 
-            let task = imageLoader.loadImage(from: url) { [weak imageView, weak indicator] image in
-                indicator?.stopAnimating()
-                imageView?.image = image
+            let task = Task { [weak imageView, weak indicator] in
+                do {
+                    let image = try await imageLoader.loadImage(from: url)
+                    await MainActor.run {
+                        indicator?.stopAnimating()
+                        // Smoothly replace placeholder with actual image
+                        UIView.transition(with: imageView ?? UIView(),
+                                        duration: 0.2,
+                                        options: .transitionCrossDissolve) {
+                            imageView?.contentMode = .scaleAspectFill
+                            imageView?.tintColor = nil
+                            imageView?.image = image
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        indicator?.stopAnimating()
+                        // Keep placeholder on error
+                    }
+                }
             }
             imageLoadTasks.append(task)
         }
@@ -169,23 +212,28 @@ final class CarouselCollectionCell: UICollectionViewCell {
         super.layoutSubviews()
         updateScrollViewLayout()
     }
+    
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // Re-enable scrolling when cell moves to window (becomes visible)
+        if window != nil {
+            scrollView.isScrollEnabled = true
+            scrollView.isPagingEnabled = true
+        }
+    }
 
     private func updateScrollViewLayout() {
         let pageWidth = scrollView.bounds.width
-        guard pageWidth > 0 else { return }
+        let pageHeight = scrollView.bounds.height
+        
+        guard pageWidth > 0, pageHeight > 0 else { return }
 
-        for (index, constraint) in containerLeadingConstraints.enumerated() {
-            constraint.constant = CGFloat(index) * pageWidth
-        }
-
-        let newContentSize = CGSize(
-            width: pageWidth * CGFloat(max(1, imageURLs.count)),
-            height: scrollView.bounds.height
-        )
-
-        if scrollView.contentSize != newContentSize {
-            scrollView.contentSize = newContentSize
-        }
+        // Content size is now automatically determined by Auto Layout constraints
+        // so we don't need to set it manually
+        
+        // Ensure scroll view is properly configured for paging
+        scrollView.isPagingEnabled = true
+        scrollView.isScrollEnabled = true
 
         isLayoutReady = true
     }
@@ -199,6 +247,7 @@ final class CarouselCollectionCell: UICollectionViewCell {
         clearPageViews()
 
         imageURLs.removeAll()
+        imageLoader = nil
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
         scrollView.contentOffset = .zero
