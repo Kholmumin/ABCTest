@@ -10,8 +10,8 @@
 
 ## Requirements
 
-- iOS 15.0+
-- Xcode 13.0+
+- iOS 18.6+
+- Xcode 18.0+
 - Swift 5.5+
 
 ## Project Structure
