@@ -1,10 +1,3 @@
-//
-//  AppSwiftUIFlowCoordinator.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import SwiftUI
 import Combine
 
@@ -16,13 +9,17 @@ final class AppSwiftUIFlowCoordinator: ObservableObject {
     @Published private(set) var statisticsItemCount: Int = 0
     @Published private(set) var statisticsTopCharacters: [(Character, Int)] = []
     
+    private lazy var carouselView: CarouselView = {
+        let actions = ListViewModelActions(showStatistics: showStatistics(_:_:))
+        return dependencyContainer.makeCarouselView(actions: actions)
+    }()
+    
     init(dependencyContainer: AppSwiftUIFlowCoordinatorDependencies) {
         self.dependencyContainer = dependencyContainer
     }
     
     func makeCarouselView() -> CarouselView {
-        let actions = ListViewModelActions(showStatistics: showStatistics(_:_:))
-        return dependencyContainer.makeCarouselView(actions: actions)
+        return carouselView
     }
     
     func makeStatisticsSheet() -> StatisticsSheet {

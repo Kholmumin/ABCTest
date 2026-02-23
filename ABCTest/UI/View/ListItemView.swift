@@ -1,10 +1,3 @@
-//
-//  ListItemView.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import SwiftUI
 
 struct ListItemView: View {
@@ -46,7 +39,7 @@ struct ListItemView: View {
 
 #Preview {
     let item = Item(
-        image: URL(string: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=800")!,
+        image: URL(string: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=800"),
         title: "Welcome",
         description: "Lets, build something cool"
     )

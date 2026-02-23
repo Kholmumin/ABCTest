@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import CoreGraphics
 
-public enum AppConstants {
+enum AppConstants {
     
     // MARK: - Layout Constants
     

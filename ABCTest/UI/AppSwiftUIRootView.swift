@@ -1,10 +1,3 @@
-//
-//  AppSwiftUIRootView.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import SwiftUI
 
 struct AppSwiftUIRootView: View {
@@ -18,9 +11,12 @@ struct AppSwiftUIRootView: View {
     var body: some View {
         coordinator.makeCarouselView()
             .sheet(isPresented: $coordinator.showStatistics) {
-                coordinator.makeStatisticsSheet()
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
+                StatisticsSheet(
+                    itemCount: coordinator.statisticsItemCount,
+                    topCharacters: coordinator.statisticsTopCharacters
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
             }
     }
 }

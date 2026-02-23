@@ -1,10 +1,3 @@
-//
-//  AppSwiftUIDependencyContainer.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import SwiftUI
 
 protocol AppSwiftUIFlowCoordinatorDependencies {
@@ -14,8 +7,25 @@ protocol AppSwiftUIFlowCoordinatorDependencies {
 
 final class AppSwiftUIDependencyContainer: AppSwiftUIFlowCoordinatorDependencies {
     
+    // MARK: - Properties
+    
+    private let apiClient: ItemAPIClient
+    private let imageLoader: ImageLoading
+    
+    // MARK: - Initialization
+    
+    init(
+        apiClient: ItemAPIClient = MockItemAPIClient(),
+        imageLoader: ImageLoading = ImageLoader.shared
+    ) {
+        self.apiClient = apiClient
+        self.imageLoader = imageLoader
+    }
+    
+    // MARK: - Factory Methods
+    
     func makeCarouselView(actions: ListViewModelActions) -> CarouselView {
-        let viewModel = ListViewModel(actions: actions)
+        let viewModel = ListViewModel(apiClient: apiClient, actions: actions)
         return CarouselView(viewModel: viewModel)
     }
     
@@ -23,4 +33,3 @@ final class AppSwiftUIDependencyContainer: AppSwiftUIFlowCoordinatorDependencies
         return StatisticsSheet(itemCount: itemCount, topCharacters: topCharacters)
     }
 }
-

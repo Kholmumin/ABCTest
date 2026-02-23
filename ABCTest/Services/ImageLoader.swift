@@ -7,7 +7,18 @@
 
 import UIKit
 
-final class ImageLoader {
+// MARK: - ImageLoading Protocol
+
+protocol ImageLoading: Sendable {
+    func loadImage(from url: URL) async throws -> UIImage
+    func cancelLoad(for url: URL) async
+    func clearCache() async
+    func prefetch(urls: [URL]) async
+}
+
+// MARK: - ImageLoader Implementation
+
+final class ImageLoader: ImageLoading {
     
     // MARK: - Singleton
     
@@ -17,19 +28,15 @@ final class ImageLoader {
     
     private let cache = NSCache<NSURL, UIImage>()
     private let session: URLSession
-    private var activeTasks: [URL: URLSessionDataTask] = [:]
-    private let taskQueue = DispatchQueue(label: "com.abctest.imageloader.taskqueue")
+    private let taskActor = ImageLoaderActor()
     
     // MARK: - Initialization
     
-    private init() {
+    init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = AppConstants.Configuration.requestTimeout
         configuration.timeoutIntervalForResource = AppConstants.Configuration.resourceTimeout
-        let delegateQueue = OperationQueue()
-        delegateQueue.maxConcurrentOperationCount = AppConstants.Configuration.maxConcurrentOperations
-        delegateQueue.qualityOfService = .userInitiated
-        self.session = URLSession(configuration: configuration, delegate: nil, delegateQueue: delegateQueue)
+        self.session = URLSession(configuration: configuration)
         
         cache.countLimit = AppConstants.Configuration.cacheCountLimit
         cache.totalCostLimit = AppConstants.Configuration.cacheSizeLimit
@@ -37,81 +44,85 @@ final class ImageLoader {
     
     // MARK: - Public Methods
     
-    @discardableResult
-    func loadImage(from url: URL, completion: @escaping (UIImage?) -> Void) -> ImageLoadTask {
+    func loadImage(from url: URL) async throws -> UIImage {
+        // Check cache first
         if let cachedImage = cache.object(forKey: url as NSURL) {
-            DispatchQueue.main.async {
-                completion(cachedImage)
-            }
-            return ImageLoadTask(url: url, loader: self)
+            return cachedImage
         }
         
-        let task = session.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self else { return }
+        // Check if there's an active task
+        if let existingTask = await taskActor.getTask(for: url) {
+            return try await existingTask.value
+        }
+        
+        // Create new task
+        let task = Task<UIImage, Error> {
+            let (data, _) = try await session.data(from: url)
             
-            self.taskQueue.async {
-                self.activeTasks.removeValue(forKey: url)
-            }
-            
-            guard let data = data,
-                  let image = UIImage(data: data),
-                  error == nil else {
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
-                return
+            guard let image = UIImage(data: data) else {
+                throw ImageLoadError.invalidImageData
             }
             
             let cost = data.count
-            self.cache.setObject(image, forKey: url as NSURL, cost: cost)
+            cache.setObject(image, forKey: url as NSURL, cost: cost)
             
-            DispatchQueue.main.async {
-                completion(image)
-            }
+            await taskActor.removeTask(for: url)
+            
+            return image
         }
         
-        taskQueue.async {
-            self.activeTasks[url] = task
-        }
-        task.resume()
+        await taskActor.setTask(task, for: url)
         
-        return ImageLoadTask(url: url, loader: self)
+        return try await task.value
     }
     
-    func cancelLoad(for url: URL) {
-        taskQueue.async {
-            self.activeTasks[url]?.cancel()
-            self.activeTasks.removeValue(forKey: url)
+    func cancelLoad(for url: URL) async {
+        if let task = await taskActor.getTask(for: url) {
+            task.cancel()
+            await taskActor.removeTask(for: url)
         }
     }
     
-    func clearCache() {
+    func clearCache() async {
         cache.removeAllObjects()
     }
     
-    func prefetch(urls: [URL]) {
-        for url in urls {
-            if cache.object(forKey: url as NSURL) != nil {
-                continue
+    func prefetch(urls: [URL]) async {
+        await withTaskGroup(of: Void.self) { group in
+            for url in urls {
+                if cache.object(forKey: url as NSURL) != nil {
+                    continue
+                }
+                
+                group.addTask {
+                    try? await self.loadImage(from: url)
+                }
             }
-            
-            loadImage(from: url) { _ in }
         }
     }
 }
 
+// MARK: - Actor for Thread-Safe Task Management
 
-final class ImageLoadTask {
-    private let url: URL
-    private weak var loader: ImageLoader?
+private actor ImageLoaderActor {
+    private var tasks: [URL: Task<UIImage, Error>] = [:]
     
-    init(url: URL, loader: ImageLoader) {
-        self.url = url
-        self.loader = loader
+    func getTask(for url: URL) -> Task<UIImage, Error>? {
+        return tasks[url]
     }
     
-    func cancel() {
-        loader?.cancelLoad(for: url)
+    func setTask(_ task: Task<UIImage, Error>, for url: URL) {
+        tasks[url] = task
+    }
+    
+    func removeTask(for url: URL) {
+        tasks.removeValue(forKey: url)
     }
 }
 
+// MARK: - Error Types
+
+enum ImageLoadError: Error {
+    case invalidImageData
+    case taskCancelled
+}

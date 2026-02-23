@@ -17,27 +17,33 @@ protocol ListViewModelOutput {
     var filteredItems: [Item] { get }
     var carouselImageURLs: [URL] { get }
     var topCharactersFromFiltered: [(Character, Int)] { get }
+    var isLoading: Bool { get }
 }
 
 protocol ListViewModelInput {
     func topCharacters(limit: Int, from items: [Item]) -> [(Character, Int)]
     func didTapFloatingButton()
+    func loadItems() async
 }
 
 typealias ListViewModelType = ListViewModelInput & ListViewModelOutput
 
+@MainActor
 final class ListViewModel: ObservableObject, ListViewModelType {
     
     // MARK: - Properties
     
     private let actions: ListViewModelActions
+    private let apiClient: ItemAPIClient
+    
     @Published var searchText: String = ""
-    private let allItems: [Item]
+    @Published var isLoading: Bool = false
+    @Published private var allItems: [Item] = []
     
     // MARK: - Initialization
     
-    init(items: [Item] = StaticModels.shared.sampleItems, actions: ListViewModelActions) {
-        self.allItems = items
+    init(apiClient: ItemAPIClient, actions: ListViewModelActions) {
+        self.apiClient = apiClient
         self.actions = actions
     }
 
@@ -63,6 +69,17 @@ final class ListViewModel: ObservableObject, ListViewModelType {
     }
     
     // MARK: - Methods
+    
+    func loadItems() async {
+        isLoading = true
+        do {
+            allItems = try await apiClient.fetchItems()
+        } catch {
+            // Handle error - could add error state to view model
+            allItems = []
+        }
+        isLoading = false
+    }
     
     func topCharacters(limit: Int = 3, from items: [Item]) -> [(Character, Int)] {
         items
