@@ -161,7 +161,6 @@ final class MainCollectionViewController: UIViewController {
         dataSource = UICollectionViewDiffableDataSource<Section, CollectionItem>(collectionView: collectionView) { collectionView, indexPath, item in
             switch item {
             case .carousel(let index, let urls):
-                // Show the image at the specific index
                 return collectionView.dequeueConfiguredReusableCell(
                     using: carouselCellRegistration,
                     for: indexPath,
@@ -180,7 +179,6 @@ final class MainCollectionViewController: UIViewController {
             guard let self = self else { return nil }
 
             if kind == Self.listHeaderElementKind && Section(rawValue: indexPath.section) == .list {
-                // Only show search header when data is loaded
                 if self.viewModel.isLoading {
                     return nil
                 }
@@ -212,7 +210,6 @@ final class MainCollectionViewController: UIViewController {
     private func updateListSection() {
         var snapshot = dataSource.snapshot()
         
-        // Only update the list section items without recreating the entire snapshot
         if snapshot.sectionIdentifiers.contains(.list) {
             let currentListItems = snapshot.itemIdentifiers(inSection: .list)
             snapshot.deleteItems(currentListItems)
