@@ -38,8 +38,8 @@ ABCTest/
 
 ## Requirements
 
-- iOS 15.0+
-- Xcode 14.0+
+- iOS 18.6
+- Xcode 18+
 - Swift 5.0+
 
 ## Installation
