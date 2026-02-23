@@ -1,10 +1,3 @@
-//
-//  ImageLoader.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 // MARK: - ImageLoading Protocol
@@ -45,17 +38,14 @@ final class ImageLoader: ImageLoading {
     // MARK: - Public Methods
     
     func loadImage(from url: URL) async throws -> UIImage {
-        // Check cache first
         if let cachedImage = cache.object(forKey: url as NSURL) {
             return cachedImage
         }
         
-        // Check if there's an active task
         if let existingTask = await taskActor.getTask(for: url) {
             return try await existingTask.value
         }
         
-        // Create new task
         let task = Task<UIImage, Error> {
             let (data, _) = try await session.data(from: url)
             
@@ -95,14 +85,13 @@ final class ImageLoader: ImageLoading {
                 }
                 
                 group.addTask {
-                    try? await self.loadImage(from: url)
+                    _ = try? await self.loadImage(from: url)
                 }
             }
         }
     }
 }
 
-// MARK: - Actor for Thread-Safe Task Management
 
 private actor ImageLoaderActor {
     private var tasks: [URL: Task<UIImage, Error>] = [:]
@@ -120,9 +109,8 @@ private actor ImageLoaderActor {
     }
 }
 
-// MARK: - Error Types
-
 enum ImageLoadError: Error {
     case invalidImageData
     case taskCancelled
 }
+

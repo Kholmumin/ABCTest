@@ -1,10 +1,3 @@
-//
-//  ListViewModel.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import Foundation
 import Combine
 
@@ -75,7 +68,6 @@ final class ListViewModel: ObservableObject, ListViewModelType {
         do {
             allItems = try await apiClient.fetchItems()
         } catch {
-            // Handle error - could add error state to view model
             allItems = []
         }
         isLoading = false
