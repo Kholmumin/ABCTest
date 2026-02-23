@@ -9,11 +9,11 @@ import SwiftUI
 
 @main
 struct TaskApp: App {
-    let diContainer = AppSwiftUIDIContainer()
+    let dependencyContainer = AppSwiftUIDependencyContainer()
 
     var body: some Scene {
         WindowGroup {
-             AppSwiftUIRootView(diContainer: diContainer)
+            AppSwiftUIRootView(dependencyContainer: dependencyContainer)
         }
     }
 }

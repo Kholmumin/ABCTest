@@ -10,23 +10,23 @@ import Combine
 
 final class AppSwiftUIFlowCoordinator: ObservableObject {
     
-    private let diContainer: AppSwiftUIFlowCoordinatorDependencies
+    private let dependencyContainer: AppSwiftUIFlowCoordinatorDependencies
     
     @Published var showStatistics = false
     @Published private(set) var statisticsItemCount: Int = 0
     @Published private(set) var statisticsTopCharacters: [(Character, Int)] = []
     
-    init(diContainer: AppSwiftUIFlowCoordinatorDependencies) {
-        self.diContainer = diContainer
+    init(dependencyContainer: AppSwiftUIFlowCoordinatorDependencies) {
+        self.dependencyContainer = dependencyContainer
     }
     
     func makeCarouselView() -> CarouselView {
         let actions = ListViewModelActions(showStatistics: showStatistics(_:_:))
-        return diContainer.makeCarouselView(actions: actions)
+        return dependencyContainer.makeCarouselView(actions: actions)
     }
     
     func makeStatisticsSheet() -> StatisticsSheet {
-        return diContainer.makeStatisticsSheet(
+        return dependencyContainer.makeStatisticsSheet(
             itemCount: statisticsItemCount,
             topCharacters: statisticsTopCharacters
         )

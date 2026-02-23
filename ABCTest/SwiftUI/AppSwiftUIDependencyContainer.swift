@@ -1,5 +1,5 @@
 //
-//  AppSwiftUIDIContainer.swift
+//  AppSwiftUIDependencyContainer.swift
 //  ABCTest
 //
 //  Created by Kholmumin on 10/02/26.
@@ -12,7 +12,7 @@ protocol AppSwiftUIFlowCoordinatorDependencies {
     func makeStatisticsSheet(itemCount: Int, topCharacters: [(Character, Int)]) -> StatisticsSheet
 }
 
-final class AppSwiftUIDIContainer: AppSwiftUIFlowCoordinatorDependencies {
+final class AppSwiftUIDependencyContainer: AppSwiftUIFlowCoordinatorDependencies {
     
     func makeCarouselView(actions: ListViewModelActions) -> CarouselView {
         let viewModel = ListViewModel(actions: actions)

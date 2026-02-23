@@ -28,19 +28,20 @@ typealias ListViewModelType = ListViewModelInput & ListViewModelOutput
 
 final class ListViewModel: ObservableObject, ListViewModelType {
     
-    private let actions: ListViewModelActions
+    // MARK: - Properties
     
-    // MARK: - INIT
+    private let actions: ListViewModelActions
+    @Published var searchText: String = ""
+    private let allItems: [Item]
+    
+    // MARK: - Initialization
     
     init(items: [Item] = StaticModels.shared.sampleItems, actions: ListViewModelActions) {
         self.allItems = items
         self.actions = actions
     }
 
-    // MARK: - PROPERTIES
-    
-    @Published var searchText: String = ""
-    private let allItems: [Item]
+    // MARK: - Computed Properties
 
     var filteredItems: [Item] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -54,14 +55,14 @@ final class ListViewModel: ObservableObject, ListViewModelType {
     }
 
     var carouselImageURLs: [URL] {
-        allItems.prefix(5).compactMap(\.image)
+        allItems.prefix(AppConstants.Configuration.carouselImageCount).compactMap(\.image)
     }
 
     var topCharactersFromFiltered: [(Character, Int)] {
-        topCharacters(limit: 3, from: filteredItems)
+        topCharacters(limit: AppConstants.Configuration.topCharactersLimit, from: filteredItems)
     }
     
-    // MARK: - METHODS
+    // MARK: - Methods
     
     func topCharacters(limit: Int = 3, from items: [Item]) -> [(Character, Int)] {
         items

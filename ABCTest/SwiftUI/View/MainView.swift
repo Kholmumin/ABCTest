@@ -29,16 +29,17 @@ struct CarouselView: View {
                                 } placeholder: {
                                     ProgressView()
                                 }
-                                .frame(height: 220)
+                                .frame(height: AppConstants.Layout.carouselImageHeight)
                             }
                         }
-                        .frame(height: 240)
+                        .frame(height: AppConstants.Layout.carouselHeight)
                         .tabViewStyle(.page)
                         .indexViewStyle(.page)
+                        
                         Section {
                             ForEach(viewModel.filteredItems, id: \.self) { item in
                                 ListItemView(item: item)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppConstants.Layout.defaultPadding)
                             }
                         } header: {
                             VStack(spacing: 0) {
@@ -48,9 +49,10 @@ struct CarouselView: View {
                         }
                     }
                 }
+                
                 StatisticsFloatingButton(action: { viewModel.didTapFloatingButton() })
             }
-            .navigationTitle("Carousel")
+            .navigationTitle(AppConstants.Text.carouselTitle)
         }
     }
 }

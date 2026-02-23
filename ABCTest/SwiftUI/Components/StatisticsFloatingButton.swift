@@ -12,16 +12,21 @@ struct StatisticsFloatingButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "chart.bar.fill")
+            Image(systemName: AppConstants.SystemImage.chartBarFill)
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .frame(width: AppConstants.Layout.floatingButtonSize, height: AppConstants.Layout.floatingButtonSize)
                 .background(Color.blue)
                 .clipShape(Circle())
-                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                .shadow(
+                    color: .black.opacity(AppConstants.Animation.shadowOpacity),
+                    radius: AppConstants.Animation.shadowRadius,
+                    x: AppConstants.Animation.shadowOffsetX,
+                    y: AppConstants.Animation.shadowOffsetY
+                )
         }
-        .padding(.trailing, 20)
-        .padding(.bottom, 20)
+        .padding(.trailing, AppConstants.Layout.largePadding)
+        .padding(.bottom, AppConstants.Layout.largePadding)
     }
 }

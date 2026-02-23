@@ -11,15 +11,15 @@ struct SearchBar: View {
     @Binding var searchText: String
 
     var body: some View {        
-        HStack(spacing: 12) {
-            Image(systemName: "magnifyingglass")
+        HStack(spacing: AppConstants.Layout.smallSpacing) {
+            Image(systemName: AppConstants.SystemImage.magnifyingGlass)
                 .foregroundStyle(.secondary)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: AppConstants.FontSize.searchIcon, weight: .medium))
 
-            TextField("Search", text: $searchText)
+            TextField(AppConstants.Text.searchPlaceholder, text: $searchText)
                 .textFieldStyle(.automatic)
-                .font(.system(size: 16))
-                .frame(height: 25)
+                .font(.system(size: AppConstants.FontSize.searchField))
+                .frame(height: AppConstants.Layout.searchBarHeight)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .background(.clear)
@@ -28,20 +28,20 @@ struct SearchBar: View {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
+                    Image(systemName: AppConstants.SystemImage.xMarkCircleFill)
                         .foregroundStyle(.secondary)
-                        .font(.system(size: 16))
+                        .font(.system(size: AppConstants.FontSize.clearButton))
                 }
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppConstants.Layout.defaultPadding)
+        .padding(.vertical, AppConstants.Layout.smallSpacing)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius)
                 .fill(Color(.systemGray6))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 30))
+        .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.extraLargeCornerRadius))
     }
 }
 

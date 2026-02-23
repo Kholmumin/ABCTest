@@ -12,38 +12,42 @@ struct StatisticsSheet: View {
     let topCharacters: [(Character, Int)]
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Statistics")
+        VStack(spacing: AppConstants.Layout.largeSpacing) {
+            Text(AppConstants.Text.statisticsTitle)
                 .font(.title)
                 .fontWeight(.bold)
-                .padding(.top, 20)
-            VStack(alignment: .leading, spacing: 16) {
+                .padding(.top, AppConstants.Layout.largeSpacing)
+            
+            VStack(alignment: .leading, spacing: AppConstants.Layout.mediumSpacing) {
                 HStack {
-                    Image(systemName: "list.bullet")
+                    Image(systemName: AppConstants.SystemImage.listBullet)
                         .foregroundStyle(.blue)
                         .font(.title2)
-                    Text("List 1")
+                    Text(AppConstants.Text.listTitle)
                         .font(.headline)
                     Spacer()
-                    Text("\(itemCount) items")
+                    Text(String(format: AppConstants.Text.itemsFormat, itemCount))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
                 .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                makeBottomUI()
+                .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius))
+                
+                makeBottomView()
             }
             .padding(.horizontal)
+            
             Spacer()
         }
     }
 
-    func makeBottomUI() -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Top 3 Characters")
+    func makeBottomView() -> some View {
+        VStack(alignment: .leading, spacing: AppConstants.Layout.smallSpacing) {
+            Text(AppConstants.Text.topCharactersTitle)
                 .font(.headline)
                 .padding(.bottom, 4)
+            
             ForEach(Array(topCharacters.enumerated()), id: \.offset) { index, entry in
                 HStack {
                     Text("\(index + 1).")
@@ -69,7 +73,7 @@ struct StatisticsSheet: View {
         }
         .padding()
         .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius))
     }
     
     private func progressColor(for index: Int) -> Color {

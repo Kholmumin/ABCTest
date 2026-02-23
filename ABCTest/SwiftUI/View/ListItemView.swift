@@ -1,6 +1,6 @@
 //
 //  ListItemView.swift
-//  TestABC
+//  ABCTest
 //
 //  Created by Kholmumin on 10/02/26.
 //
@@ -16,12 +16,13 @@ struct ListItemView: View {
                 image
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 100, height: 100)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .frame(width: AppConstants.Layout.imageSize, height: AppConstants.Layout.imageSize)
+                    .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.largeCornerRadius))
             } placeholder: {
                 ProgressView()
             }
             .padding(.leading)
+            
             VStack(alignment: .leading) {
                 Text(item.title)
                     .font(.headline)
@@ -32,17 +33,22 @@ struct ListItemView: View {
                     .lineLimit(2)
             }
             .padding(.leading, 5)
+            
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 120)
-        .background(Color.gray.opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .frame(height: AppConstants.Layout.listItemHeight)
+        .background(Color.gray.opacity(AppConstants.Animation.backgroundOpacity))
+        .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.largeCornerRadius))
         .padding()
     }
 }
 
 #Preview {
-    let item = Item(image: URL(string: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=800")!, title: "Welcome", description: "Lets, build something cool")
-     ListItemView(item: item)
+    let item = Item(
+        image: URL(string: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=800")!,
+        title: "Welcome",
+        description: "Lets, build something cool"
+    )
+    ListItemView(item: item)
 }

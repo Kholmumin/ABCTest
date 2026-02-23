@@ -24,15 +24,15 @@ final class ImageLoader {
     
     private init() {
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 60
+        configuration.timeoutIntervalForRequest = AppConstants.Configuration.requestTimeout
+        configuration.timeoutIntervalForResource = AppConstants.Configuration.resourceTimeout
         let delegateQueue = OperationQueue()
-        delegateQueue.maxConcurrentOperationCount = 4
+        delegateQueue.maxConcurrentOperationCount = AppConstants.Configuration.maxConcurrentOperations
         delegateQueue.qualityOfService = .userInitiated
         self.session = URLSession(configuration: configuration, delegate: nil, delegateQueue: delegateQueue)
         
-        cache.countLimit = 100
-        cache.totalCostLimit = 50 * 1024 * 1024 // 50 MB
+        cache.countLimit = AppConstants.Configuration.cacheCountLimit
+        cache.totalCostLimit = AppConstants.Configuration.cacheSizeLimit
     }
     
     // MARK: - Public Methods

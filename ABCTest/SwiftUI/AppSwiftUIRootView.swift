@@ -11,8 +11,8 @@ struct AppSwiftUIRootView: View {
     
     @StateObject private var coordinator: AppSwiftUIFlowCoordinator
     
-    init(diContainer: AppSwiftUIFlowCoordinatorDependencies) {
-        _coordinator = StateObject(wrappedValue: AppSwiftUIFlowCoordinator(diContainer: diContainer))
+    init(dependencyContainer: AppSwiftUIFlowCoordinatorDependencies) {
+        _coordinator = StateObject(wrappedValue: AppSwiftUIFlowCoordinator(dependencyContainer: dependencyContainer))
     }
     
     var body: some View {
@@ -26,6 +26,6 @@ struct AppSwiftUIRootView: View {
 }
 
 #Preview {
-    AppSwiftUIRootView(diContainer: AppSwiftUIDIContainer())
+    AppSwiftUIRootView(dependencyContainer: AppSwiftUIDependencyContainer())
 }
 
