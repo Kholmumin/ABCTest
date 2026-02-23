@@ -1,10 +1,3 @@
-//
-//  ImageLoadingService.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 // MARK: - Image Loading Protocol
@@ -59,23 +52,20 @@ final class ImageLoader: ImageLoadingService {
         }
         
         cache.countLimit = 100
-        cache.totalCostLimit = 50 * 1024 * 1024 // 50 MB
+        cache.totalCostLimit = 50 * 1024 * 1024
     }
     
     // MARK: - Public Methods
     
     func loadImage(from url: URL) async throws -> UIImage {
-        // Check cache first
         if let cachedImage = cache.object(forKey: url as NSURL) {
             return cachedImage
         }
         
-        // Check if there's already a task for this URL
         if let existingTask = await taskManager.getTask(for: url) {
             return try await existingTask.value
         }
         
-        // Create new task
         let task = Task<UIImage, Error> {
             let (data, response) = try await session.data(from: url)
             
@@ -88,7 +78,6 @@ final class ImageLoader: ImageLoadingService {
                 throw ImageLoadError.invalidImageData
             }
             
-            // Cache the image
             let cost = data.count
             cache.setObject(image, forKey: url as NSURL, cost: cost)
             
@@ -115,7 +104,6 @@ final class ImageLoader: ImageLoadingService {
     func prefetch(urls: [URL]) async {
         await withTaskGroup(of: Void.self) { group in
             for url in urls {
-                // Skip if already cached
                 if cache.object(forKey: url as NSURL) != nil {
                     continue
                 }

@@ -1,10 +1,3 @@
-//
-//  TextConstants.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import Foundation
 
 enum TextConstants {

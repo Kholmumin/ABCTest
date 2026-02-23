@@ -1,10 +1,3 @@
-//
-//  ItemAPIClient.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import Foundation
 
 // MARK: - API Client Protocol
@@ -32,7 +25,6 @@ final class MockItemAPIClient: ItemAPIClient {
     // MARK: - Public Methods
     
     func fetchItems() async throws -> [Item] {
-        // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         
         if shouldSimulateError {

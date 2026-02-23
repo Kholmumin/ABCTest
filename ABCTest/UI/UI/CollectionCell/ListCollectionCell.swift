@@ -1,10 +1,3 @@
-//
-//  ListCollectionCell.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 final class ListCollectionCell: UICollectionViewCell {

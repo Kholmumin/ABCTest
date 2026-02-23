@@ -1,10 +1,3 @@
-//
-//  CarouselCollectionCell.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 final class CarouselCollectionCell: UICollectionViewCell {
@@ -69,13 +62,11 @@ final class CarouselCollectionCell: UICollectionViewCell {
         self.imageLoader = imageLoader
         imageLoadTask?.cancel()
 
-        // Set placeholder image
         let placeholderConfig = UIImage.SymbolConfiguration(pointSize: 40, weight: .light)
         imageView.image = UIImage(systemName: ImageConstants.SFSymbol.photoPlaceholder, withConfiguration: placeholderConfig)
         imageView.tintColor = .systemGray3
         activityIndicator.startAnimating()
 
-        // Load actual image
         imageLoadTask = Task { [weak self] in
             guard let self = self else { return }
             
@@ -94,7 +85,6 @@ final class CarouselCollectionCell: UICollectionViewCell {
             } catch {
                 await MainActor.run {
                     self.activityIndicator.stopAnimating()
-                    // Keep placeholder on error
                 }
             }
         }

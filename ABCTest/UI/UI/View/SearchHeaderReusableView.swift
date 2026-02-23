@@ -1,10 +1,3 @@
-//
-//  SearchHeaderReusableView.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 final class SearchHeaderReusableView: UICollectionReusableView {

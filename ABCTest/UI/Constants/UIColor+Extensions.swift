@@ -1,10 +1,3 @@
-//
-//  UIColor+Extensions.swift
-//  ABCTest
-//
-//  Created by Kholmumin on 10/02/26.
-//
-
 import UIKit
 
 extension UIColor {
